@@ -1,0 +1,49 @@
+version: "2"
+
+services:
+    vpl-builder:
+        build:
+            context: ./container
+            args: [ "UBUNTU_VER=${UBUNTU_VER}" ]
+        volumes: [ "./sources:/sources", "./install:/install", "./build-driver.sh:/build-driver.sh" ]
+        user: "${UID_GID}"
+        command: bash -c "/build-driver.sh /sources /install"
+
+    vpl-runner:
+        build:
+            context: ./container
+            args: [ "UBUNTU_VER=${UBUNTU_VER}" ]
+        volumes: [ "./install:/install" ]
+        devices: [ "/dev/dri:/dev/dri" ]
+        user: "${UID_GID}"
+        group_add: ["${VID_GID}", "${RND_GID}"]
+        environment:
+          - LD_LIBRARY_PATH=/install/lib
+          - LIBVA_DRIVER_NAME=iHD
+          - LIBVA_DRIVERS_PATH=/install/lib/dri
+          - PATH=/install/bin:$PATH
+        command: bash -c "vainfo && vpl-inspect"
+
+    opencv-builder:
+        build:
+            context: ./container
+            args: [ "UBUNTU_VER=${UBUNTU_VER}" ]
+        volumes:
+            - "./sources:/sources"
+            - "./install:/install"
+            - "./build-opencv.sh:/build-opencv.sh"
+            - "./env.sh:/env.sh"
+        user: "${UID_GID}"
+        command: bash -c ". env.sh ; /build-opencv.sh /sources /install"
+
+    opencv-runner:
+        build:
+            context: ./container
+            args: [ "UBUNTU_VER=${UBUNTU_VER}" ]
+        volumes:
+            - "./install:/install"
+            - "./env.sh:/env.sh"
+        devices: [ "/dev/dri:/dev/dri" ]
+        user: "${UID_GID}"
+        group_add: ["${VID_GID}", "${RND_GID}"]
+        command: bash -c ". env.sh ; /install/bin/opencv_test_videoio --gtest_filter=*mfx*"
