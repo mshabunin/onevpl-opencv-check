@@ -41,9 +41,10 @@ services:
             context: ./container
             args: [ "UBUNTU_VER=${UBUNTU_VER}" ]
         volumes:
+            - "./sources:/sources"
             - "./install:/install"
             - "./env.sh:/env.sh"
         devices: [ "/dev/dri:/dev/dri" ]
         user: "${UID_GID}"
         group_add: ["${VID_GID}", "${RND_GID}"]
-        command: bash -c ". env.sh ; /install/bin/opencv_test_videoio --gtest_filter=*mfx*"
+        command: bash -c ". env.sh ; /sources/opencv/build/bin/opencv_test_videoio --gtest_filter=*mfx*"
